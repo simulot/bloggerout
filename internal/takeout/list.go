@@ -1,0 +1,16 @@
+package takeout
+
+import (
+	"fmt"
+)
+
+func (to *BloggerTakeout) ListBlogs() {
+	for _, blog := range to.Blogs {
+		fmt.Println(BlogTitleStyle.Render(`"` + blog.Title + `"`))
+		if len(blog.Description) > 0 {
+			fmt.Println(BlogDescStyle.Render(blog.Description))
+		}
+		fmt.Println(PostsCountStyle.Render(fmt.Sprintf("%d posts", len(blog.Posts))))
+		fmt.Println(SpacerStyle.Render(""))
+	}
+}
