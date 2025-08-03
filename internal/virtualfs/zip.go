@@ -59,7 +59,8 @@ func NewZipFileSystem(zipFiles ...string) (FileSystem, error) {
 		}
 		for _, file := range zfs.zipReaders[i].File {
 			if _, present := list[file.Name]; present {
-				return nil, fmt.Errorf("duplicate file name %s in zip files", file.Name)
+				continue
+				// return nil, fmt.Errorf("duplicate file name %s in zip files", file.Name)
 			}
 			list[file.Name] = zipEntry{
 				// zReader: zfs.zipReaders[i],

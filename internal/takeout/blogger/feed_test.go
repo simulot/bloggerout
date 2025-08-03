@@ -1,4 +1,4 @@
-package takeout
+package blogger
 
 import (
 	"encoding/xml"
@@ -15,7 +15,7 @@ func TestParseFeed(t *testing.T) {
 	defer file.Close()
 
 	// Parse the XML
-	var feed Feed
+	var feed feed
 	decoder := xml.NewDecoder(file)
 	err = decoder.Decode(&feed)
 	if err != nil {
@@ -38,11 +38,18 @@ func TestParseFeed(t *testing.T) {
 		if entry.Published.IsZero() {
 			t.Errorf("expected entry published date to be non-empty")
 		}
-		// if entry.Title == "" {
+		if entry.Updated.IsZero() {
+			t.Errorf("expected entry updated date to be non-empty")
+		}
+		// if entry.Title == "" && entry.Type == "POST" {
 		// 	t.Errorf("expected entry title to be non-empty")
 		// }
 		if entry.Content == "" {
 			t.Errorf("expected entry content to be non-empty")
+		}
+
+		if len(entry.Categories) == 0 {
+			t.Errorf("expected entry to have categories")
 		}
 	}
 }

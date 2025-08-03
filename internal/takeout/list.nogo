@@ -2,9 +2,11 @@ package takeout
 
 import (
 	"fmt"
+
+	"bloggerout/internal/takeout"
 )
 
-func (to *BloggerTakeout) ListBlogs() {
+func (to *takeout.Takeout) ListBlogs() {
 	for _, blog := range to.Blogs {
 		fmt.Println(BlogTitleStyle.Render(`"` + blog.Title + `"`))
 		if len(blog.Description) > 0 {
