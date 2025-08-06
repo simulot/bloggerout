@@ -347,7 +347,7 @@ func (pc *postConverter) tableHandler(ctx converter.Context, w converter.Writer,
 			return converter.RenderTryNext
 		}
 		host := u.Hostname()
-		if host == "picasaweb.google.fr" {
+		if strings.HasPrefix(host, "picasaweb.") {
 			pc.log(w, CONTENT_LOST, fmt.Sprintf("The Picasa web albums service has been dismissed by Google: (%s)", u.String()))
 			return converter.RenderSuccess
 		}
@@ -376,9 +376,4 @@ func (pc *postConverter) tableHandler(ctx converter.Context, w converter.Writer,
 		return converter.RenderSuccess
 	}
 	return converter.RenderTryNext
-}
-
-// safeAttribute escapes a string for use in an HTML attribute
-func safeAttribute(s string) string {
-	return `"` + strings.ReplaceAll(s, `"`, `\"`) + `"`
 }

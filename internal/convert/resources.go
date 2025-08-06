@@ -64,49 +64,42 @@ func (pc *postConverter) renderImage(ctx context.Context, w converter.Writer, li
 	img.Caption = caption
 	pc.resources[img.Name] = img // remember we have processed this image already
 
-	if img.Resource == nil {
-		// Not in the takeout, try to download from the internet
-		_, err = pc.pfs.Stat(img.Name)
-		if err != nil && errors.Is(err, os.ErrNotExist) {
-			err = pc.ImageDownload(ctx, img)
-			if err != nil {
-				// Render the error in the post, nothing else
-				pc.log(w, CONTENT_LOST, "can't download image: "+err.Error())
-				return nil
-			}
-		}
-		// The image has been downloaded from the internet, mention it in the post.
-		pc.log(w, MISSING_ORIGINAL, "Image not found in the takeout archive, remote image copied to the post: "+img.Name)
-	} else {
-		// The image is found in the takeout
+	_, err = pc.pfs.Stat(img.Name)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		pc.log(w, ERROR, fmt.Sprintf("can't stat image: %s", err))
+		return err
+	}
 
-		// Check if the image is already in the post
-		_, err := pc.pfs.Stat(img.Name)
-		if err != nil {
-			if !os.IsNotExist(err) {
-				// Can't stat files... abort
-				return fmt.Errorf("can't check if image %s exists: %w", img.Name, err)
-			}
+	if err != nil && errors.Is(err, os.ErrNotExist) {
+		// the image is not yet in the post folder
 
-			if img.data == nil {
-				err := pc.copyFromTakeout(ctx, img)
+		if img.Resource == nil {
+			// Not in the takeout, try to download from the internet
+			if img.data != nil {
+				err := pc.copyFromURL(ctx, img)
 				if err != nil {
-					slog.Error("can't copy image from takeout", "image", img.Name, "error", err)
+					slog.Error("can't copy image from url", "image", img.Name, "error", err)
 					return err
 				}
 			} else {
-				// The image is in the url
-				if img.data != nil {
-					err := pc.copyFromURL(ctx, img)
-					if err != nil {
-						slog.Error("can't copy image from url", "image", img.Name, "error", err)
-						return err
-					}
+				err = pc.ImageDownload(ctx, img)
+				if err != nil {
+					// Render the error in the post, nothing else
+					pc.log(w, CONTENT_LOST, "can't download image: "+err.Error())
+					return nil
 				}
+				// The image has been downloaded from the internet, mention it in the post.
+				pc.log(w, MISSING_ORIGINAL, "Image not found in the takeout archive, remote image copied to the post: "+img.Name)
+			}
+		} else {
+			// The image is found in the takeout
+			err := pc.copyFromTakeout(ctx, img)
+			if err != nil {
+				slog.Error("can't copy image from takeout", "image", img.Name, "error", err)
+				return err
 			}
 		}
 	}
-
 	// write the figure shortcode
 	sb := strings.Builder{}
 	sb.WriteString("{{< figure")
@@ -314,4 +307,9 @@ func (pc *postConverter) compyVideoFromTakeout(_ context.Context, video video) e
 		return fmt.Errorf("failed to copy image into %q: %w", video.Name, err)
 	}
 	return nil
+}
+
+// safeAttribute escapes a string for use in an HTML attribute
+func safeAttribute(s string) string {
+	return `"` + strings.ReplaceAll(s, `"`, `\"`) + `"`
 }
